@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <Windows.h>
+#include <time.h>
 
 TrackingSystem::TrackingSystem(float k_proportional_,
 								GM * horizontal_gm_, GM * vertical_gm_,
@@ -183,9 +184,6 @@ BOOL handleCtrlEvent(DWORD ctrl_type) {
 void TrackingSystem::autoTracking() {
 	std::cout << "Start auto tracking, press Ctrl+C to stop" << std::endl;
 
-	loop = true;
-	SetConsoleCtrlHandler((PHANDLER_ROUTINE) handleCtrlEvent, true);
-
 	bool first = true;
 	float max_hr = 0.0, min_hr = 0.0, total_hr = 0.0, total_hr_mag = 0.0;
 	float max_vr = 0.0, min_vr = 0.0, total_vr = 0.0, total_vr_mag = 0.0;
@@ -194,6 +192,13 @@ void TrackingSystem::autoTracking() {
 	int max_pv_val = 0, min_pv_val = 0, total_pv_val = 0;
 	int max_nv_val = 0, min_nv_val = 0, total_nv_val = 0;
 	int num_iters = 0;
+
+	int print_every_k_iters = 50;
+
+	time_t start_time = time(NULL);
+
+	loop = true;
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)handleCtrlEvent, true);
 	while (loop) {
 		// Horizontal
 		int phlm_val = 0, nhlm_val = 0;
@@ -205,6 +210,10 @@ void TrackingSystem::autoTracking() {
 
 		if (verbose) {
 			std::cout << "TS: (" << hr << "," << vr << ")" << std::endl;
+		}
+
+		if (num_iters % print_every_k_iters == 0) {
+			std::cout << "GM pos (" << horizontal_gm->getCurrentValue() << ", " << vertical_gm->getCurrentValue() << ")" << std::endl;
 		}
 		
 		// Update stats
@@ -259,6 +268,8 @@ void TrackingSystem::autoTracking() {
 	}
 	SetConsoleCtrlHandler(NULL, false);
 
+	time_t end_time = time(NULL);
+
 	std::cout << "-----------------------------------------------------" << std::endl;
 	std::cout << "|                  Test Parameters                  |" << std::endl;
 	std::cout << "-----------------------------------------------------" << std::endl;
@@ -277,7 +288,8 @@ void TrackingSystem::autoTracking() {
 	std::cout << "Min vr:     " << min_vr << std::endl;
 	std::cout << "Avg vr:     " << total_vr / num_iters << std::endl;
 	std::cout << "Avg mag vr: " << total_vr_mag / num_iters << std::endl;
-	std::cout << "Num iters:  " << num_iters << std::endl << std::endl;
+	std::cout << "Num iters:  " << num_iters << std::endl;
+	std::cout << "Iters/sec:  " << float(num_iters) / float((end_time - start_time > 0) ? end_time - start_time : 0.1) << std::endl << std::endl;
 	std::cout << "-----------------------------------------------------" << std::endl;
 	std::cout << "|                 Value Statistics                  |" << std::endl;
 	std::cout << "-----------------------------------------------------" << std::endl;
